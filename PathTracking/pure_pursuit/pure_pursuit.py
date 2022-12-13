@@ -15,7 +15,7 @@ k = 0.1  # look forward gain
 Lfc = 2.0  # [m] look-ahead distance
 Kp = 1.0  # speed proportional gain
 dt = 0.1  # [s] time tick
-WB = 2.9  # [m] wheel base of vehicle
+WB = 1.05  # [m] wheel base of vehicle
 
 show_animation = True
 
@@ -84,6 +84,7 @@ class TargetCourse:
             d = np.hypot(dx, dy)
             ind = np.argmin(d)
             self.old_nearest_point_index = ind
+
         else:
             ind = self.old_nearest_point_index
             distance_this_index = state.calc_distance(self.cx[ind],
@@ -93,8 +94,10 @@ class TargetCourse:
                                                           self.cy[ind + 1])
                 if distance_this_index < distance_next_index:
                     break
+
                 ind = ind + 1 if (ind + 1) < len(self.cx) else ind
                 distance_this_index = distance_next_index
+                
             self.old_nearest_point_index = ind
 
         Lf = k * state.v + Lfc  # update look ahead distance
@@ -144,22 +147,22 @@ def plot_arrow(x, y, yaw, length=1.0, width=0.5, fc="r", ec="k"):
 
 
 def main():
-    #  target course
+    #  경로 추정 맵 생성
     cx = np.arange(0, 50, 0.5)
     cy = [math.sin(ix / 5.0) * ix / 2.0 for ix in cx]
 
-    target_speed = 10.0 / 3.6  # [m/s]
+    target_speed = 10.0 / 3.6  # 100.0/3.6[m/s] -> 10.0[km/h]
 
-    T = 100.0  # max simulation time
+    T = 100.0  # parameter초 동안 시뮬레이션이 가동됨
 
-    # initial state
+    # 차량의 초기 위치
     state = State(x=-0.0, y=-3.0, yaw=0.0, v=0.0)
 
-    lastIndex = len(cx) - 1
+    lastIndex = len(cx) - 1 # 마지막 waypoint
     time = 0.0
     states = States()
-    states.append(time, state)
-    target_course = TargetCourse(cx, cy)
+    states.append(time, state) # 차량의 시간당 위치 기록
+    target_course = TargetCourse(cx, cy) # 목표 코스 찾기
     target_ind, _ = target_course.search_target_index(state)
 
     while T >= time and lastIndex > target_ind:
